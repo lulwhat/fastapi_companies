@@ -31,11 +31,12 @@ RUN mkdir -p $APP_HOME \
     && addgroup -S app \
     && adduser -S app -G app \
     && apk update \
-    && apk add libpq
+    && apk add libpq geos
 
 # reqs
 COPY --from=builder /usr/src/app/wheels /wheels
 RUN pip install --no-cache /wheels/*
+RUN pip install --no-cache-dir geoalchemy2[shapely]
 
 WORKDIR $APP_HOME
 
