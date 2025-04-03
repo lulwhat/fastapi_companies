@@ -11,6 +11,8 @@ All the requirements are listed in [requirements.txt](/app/requirements.txt)
 
 DB is prepopulated with test data from [db_backup.sql](/app/db_backup.sql)
 
+Task description for the API: [task_description.docx](/task_description.docx)
+
 <br/><br/>
 
 **To use locally run following steps:**
