@@ -3,7 +3,7 @@
 
 Runs on *Python 3.12.2*
 
-Uses *FastAPI 0.115.11*, *SQLAlchemy 2.0.39*, *PostgreSQL 17*
+Uses *FastAPI 0.115.11*, *SQLAlchemy 2.0.39*, *PostgreSQL 17*, *RabbitMQ 3.13.7*
 
 Prepared to host with *Docker-compose*
 
