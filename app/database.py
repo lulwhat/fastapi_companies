@@ -1,7 +1,5 @@
-import os
 from typing import List
 
-from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from geoalchemy2 import WKTElement, Geography
 from sqlalchemy import func, cast
@@ -9,24 +7,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker, joinedload, selectinload
 
+from app.config import settings
 from models import Building, Company, Category, PhoneNumber, \
     company_category_association
 
-load_dotenv()
 
-SQL_USER = os.getenv('SQL_USER')
-SQL_PASSWORD = os.getenv('SQL_PASSWORD')
-SQL_DATABASE = os.getenv('SQL_DATABASE')
-
-# local version
-# URL_DATABASE = (f'postgresql+asyncpg://{SQL_USER}:{SQL_PASSWORD}'
-#                 f'@localhost:5432/{SQL_DATABASE}')
-
-# docker version
-URL_DATABASE = (f'postgresql+asyncpg://{SQL_USER}:{SQL_PASSWORD}'
-                f'@db:5432/{SQL_DATABASE}')
-
-engine = create_async_engine(URL_DATABASE, echo=True)
+engine = create_async_engine(settings.URL_DATABASE, echo=True)
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
@@ -37,6 +23,11 @@ AsyncSessionLocal = sessionmaker(
 async def get_session() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         yield session
+
+
+async def create_session() -> AsyncSession:
+    """For usage outside FastAPI (e.g. consumer)"""
+    return AsyncSessionLocal()
 
 
 async def select_building(building_id, db: AsyncSession) -> Building:

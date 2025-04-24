@@ -180,6 +180,44 @@ CREATE TABLE public.company_category_association (
 ALTER TABLE public.company_category_association OWNER TO nebus;
 
 --
+-- Name: export_tasks; Type: TABLE; Schema: public; Owner: nebus
+--
+
+CREATE TABLE public.export_tasks (
+    id integer NOT NULL,
+    status character varying,
+    export_table character varying,
+    file_path character varying,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone
+);
+
+
+ALTER TABLE public.export_tasks OWNER TO nebus;
+
+--
+-- Name: export_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: nebus
+--
+
+CREATE SEQUENCE public.export_tasks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.export_tasks_id_seq OWNER TO nebus;
+
+--
+-- Name: export_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nebus
+--
+
+ALTER SEQUENCE public.export_tasks_id_seq OWNED BY public.export_tasks.id;
+
+
+--
 -- Name: phone_numbers; Type: TABLE; Schema: public; Owner: nebus
 --
 
@@ -236,6 +274,13 @@ ALTER TABLE ONLY public.companies ALTER COLUMN id SET DEFAULT nextval('public.co
 
 
 --
+-- Name: export_tasks id; Type: DEFAULT; Schema: public; Owner: nebus
+--
+
+ALTER TABLE ONLY public.export_tasks ALTER COLUMN id SET DEFAULT nextval('public.export_tasks_id_seq'::regclass);
+
+
+--
 -- Name: phone_numbers id; Type: DEFAULT; Schema: public; Owner: nebus
 --
 
@@ -247,7 +292,7 @@ ALTER TABLE ONLY public.phone_numbers ALTER COLUMN id SET DEFAULT nextval('publi
 --
 
 COPY public.alembic_version (version_num) FROM stdin;
-71f39b660b75
+528e2a6a81e4
 \.
 
 
@@ -304,6 +349,14 @@ COPY public.company_category_association (company_id, category_id) FROM stdin;
 
 
 --
+-- Data for Name: export_tasks; Type: TABLE DATA; Schema: public; Owner: nebus
+--
+
+COPY public.export_tasks (id, status, export_table, file_path, created_at, updated_at) FROM stdin;
+\.
+
+
+--
 -- Data for Name: phone_numbers; Type: TABLE DATA; Schema: public; Owner: nebus
 --
 
@@ -317,7 +370,7 @@ COPY public.phone_numbers (id, phone_number, company_id) FROM stdin;
 
 
 --
--- Data for Name: spatial_ref_sys; Type: TABLE DATA; Schema: public; Owner: nebus
+-- Data for Name: spatial_ref_sys; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.spatial_ref_sys (srid, auth_name, auth_srid, srtext, proj4text) FROM stdin;
@@ -343,6 +396,13 @@ SELECT pg_catalog.setval('public.categories_id_seq', 10, true);
 --
 
 SELECT pg_catalog.setval('public.companies_id_seq', 15, true);
+
+
+--
+-- Name: export_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nebus
+--
+
+SELECT pg_catalog.setval('public.export_tasks_id_seq', 1, false);
 
 
 --
@@ -393,6 +453,14 @@ ALTER TABLE ONLY public.company_category_association
 
 
 --
+-- Name: export_tasks export_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: nebus
+--
+
+ALTER TABLE ONLY public.export_tasks
+    ADD CONSTRAINT export_tasks_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: phone_numbers phone_numbers_pkey; Type: CONSTRAINT; Schema: public; Owner: nebus
 --
 
@@ -426,6 +494,13 @@ CREATE INDEX ix_categories_id ON public.categories USING btree (id);
 --
 
 CREATE INDEX ix_companies_id ON public.companies USING btree (id);
+
+
+--
+-- Name: ix_export_tasks_id; Type: INDEX; Schema: public; Owner: nebus
+--
+
+CREATE INDEX ix_export_tasks_id ON public.export_tasks USING btree (id);
 
 
 --

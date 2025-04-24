@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 from geoalchemy2.shape import to_shape
@@ -51,3 +52,12 @@ class CompaniesByCategories(BaseModel):
     category_id: int
     category_name: str
     companies: dict
+
+
+class ExportStatus(BaseModel):
+    task_id: int
+    status: str
+    export_table: str
+    url: str | None
+    created_at: datetime | None
+    updated_at: datetime | None

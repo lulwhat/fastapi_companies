@@ -1,5 +1,6 @@
 from geoalchemy2 import Geometry
-from sqlalchemy import Column, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, DateTime, \
+    func
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy_utils import PhoneNumberType
 
@@ -53,7 +54,7 @@ class Company(Base):
         return f'<Company(id={self.id}, name={self.name})>'
 
 
-class   Building(Base):
+class Building(Base):
     __tablename__ = 'buildings'
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
@@ -91,3 +92,14 @@ class Category(Base):
     def __repr__(self):
         return (f'<Category(id={self.id}, name={self.name}, '
                 f'parent_id={self.parent_id})>')
+
+
+class ExportTask(Base):
+    __tablename__ = 'export_tasks'
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    status = Column(String, default='pending')
+    export_table = Column(String)
+    file_path = Column(String, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())

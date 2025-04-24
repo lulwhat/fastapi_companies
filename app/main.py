@@ -1,12 +1,16 @@
 from typing import List
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, BackgroundTasks
+from fastapi.responses import FileResponse
 
 import schemas
 from database import AsyncSession, get_session, select_building, \
     select_category, select_company, select_companies_in_area, \
     select_companies_by_category, insert_building, insert_company, \
     insert_category, select_building_companies
+from rabbitmq.export_service import create_task, check_task, \
+    get_export_file_content
+from rabbitmq.producer import publish_export_task
 
 app = FastAPI()
 
@@ -21,9 +25,9 @@ app = FastAPI()
     """
 )
 async def create_building(
-    address: str,
-    coordinates: tuple[float, float],
-    db: AsyncSession = Depends(get_session)
+        address: str,
+        coordinates: tuple[float, float],
+        db: AsyncSession = Depends(get_session)
 ):
     bld = await insert_building(address, coordinates, db)
     return {
@@ -303,3 +307,70 @@ async def get_company_by_id(
         'building_id': cmp.building_id,
         'categories': [cat.name for cat in cmp.categories]
     }
+
+
+@app.post(
+    '/export/',
+    response_model=schemas.ExportStatus,
+    description="""## Export data from table to .csv file:
+    
+    - str: export_table - table name to export
+    """
+)
+async def create_export(
+        bg_tasks: BackgroundTasks,
+        export_table: str = 'companies',
+        db: AsyncSession = Depends(get_session)
+):
+    task = await create_task(export_table, db)
+    bg_tasks.add_task(publish_export_task, task.id)
+    return {
+        'task_id': task.id,
+        'status': task.status,
+        'export_table': task.export_table,
+        'url': task.file_path,
+        'created_at': task.created_at,
+        'updated_at': task.updated_at
+    }
+
+
+@app.get(
+    '/export/status/',
+    response_model=schemas.ExportStatus,
+    description="""## Get export status:
+
+    - int: task_id - export task id
+    """
+)
+async def get_export_status(
+        task_id: int,
+        db: AsyncSession = Depends(get_session)
+):
+    task = await check_task(task_id, db)
+    return {
+        'task_id': task.id,
+        'status': task.status,
+        'export_table': task.export_table,
+        'url': task.file_path,
+        'created_at': task.created_at,
+        'updated_at': task.updated_at
+    }
+
+
+@app.get(
+    '/export/download/',
+    description="""## Download exported file:
+
+    - int: task_id - export task id
+    """
+)
+async def download_export_file(
+        task_id: int,
+        db: AsyncSession = Depends(get_session)
+):
+    file_path = await get_export_file_content(task_id, db)
+    return FileResponse(
+        path=file_path,
+        filename=file_path.name,
+        media_type='text/csv'
+    )

@@ -17,16 +17,65 @@ services:
       - .env
 
   web:
-    build: ./app
+    build:
+      context: .
+      target: app
     container_name: app
     ports:
       - "8000:8000"
     depends_on:
       - db
+      - rabbitmq
     environment:
-      DATABASE_URL: postgresql://${SQL_USER}:${SQL_PASSWORD}@db:5432/${SQL_DATABASE}
+      - DATABASE_URL=postgresql://${SQL_USER}:${SQL_PASSWORD}@db:5432/${SQL_DATABASE}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+    volumes:
+      - ./app:/home/app/web/app
+      - exports-volume:/home/app/web/app/exports
     env_file:
       - .env
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    env_file:
+      - .env
+
+  export_worker:
+    build:
+      context: .
+      target: worker
+    container_name: worker
+    volumes:
+      - exports-volume:/home/app/web/app/exports
+      - ./app/rabbitmq:/home/app/web/app/rabbitmq
+    restart: unless-stopped
+    depends_on:
+      - db
+      - rabbitmq
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/home/app/web
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./app/rabbitmq/consumer.py
+          target: ./app/rabbitmq/consumer.py
+
 volumes:
   postgres-data:
+  exports-volume:
+  rabbitmq-data:
