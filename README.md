@@ -1,23 +1,35 @@
-### FastAPI application for storing companies
-<br/>
+## FastAPI application for managing companies
 
-Runs on *Python 3.12.2*
+Features:
++ Companies catalogue
++ Buildings with WGS-84 coordinates that companies are registered in
++ Companies phone numbers
++ Searching for companies in an area
++ Companies category tree with search
++ Background tasks for exporting tables data
 
-Uses *FastAPI 0.115.11*, *SQLAlchemy 2.0.39*, *PostgreSQL 17*, *RabbitMQ 3.13.7*
+Stack:
++ Python 3.12.2
++ FastAPI 0.115.11
++ SQLAlchemy 2.0.39
++ PostgreSQL 17
++ RabbitMQ 3.13.7
 
-Prepared to host with *Docker-compose*
+Prepared to deploy with *Docker-compose*
 
-All the requirements are listed in [requirements.txt](/app/requirements.txt)
+Full list of requirements: [requirements.txt](/app/requirements.txt)
 
 DB is prepopulated with test data from [db_backup.sql](/app/db_backup.sql)
 
-Task description for the API: [task_description.docx](/task_description.docx)
+Full task description: [task_description.docx](/task_description.docx)
 
-<br/><br/>
+<br/>
 
 **To use locally run following steps:**
 
-**Start containers:** `docker-compose up --build -d`
+**Build containers:**
++ Either straight-up execute `./setup` (`.env` will be created from [.env.example](/.env.example) copy)
++ Or create your own `.env` based on [.env.example](/.env.example) and then run `./setup`
 
 **Open in browser to access SwaggerUI:** `http://localhost:8000/docs`
 

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='nebus_fastapi',
+    name='fastapi_companies',
     version="0.1",
     packages=find_packages(),
 )
