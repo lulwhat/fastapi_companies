@@ -12,11 +12,9 @@ ENV PYTHONUNBUFFERED=1
 # reqs
 RUN apk update \
     && apk add postgresql-dev geos-dev gcc python3-dev musl-dev
-COPY ./setup.py .
-COPY ./app ./app
+COPY ./requirements.txt ./requirements.txt
 RUN pip install --upgrade pip
-RUN pip install -e .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r ./app/requirements.txt
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r ./requirements.txt
 
 
 ########
@@ -27,6 +25,11 @@ FROM python:3.12.2-alpine AS base
 
 ENV HOME=/home/app
 ENV APP_HOME=/home/app/web
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+ENV PYTHONPATH=/home/app/web/app
 
 # setup user app
 RUN mkdir -p $APP_HOME \
@@ -39,26 +42,29 @@ RUN mkdir -p $APP_HOME \
 COPY --from=builder /usr/src/app/wheels /wheels
 RUN pip install --no-cache /wheels/*
 RUN pip install --no-cache-dir geoalchemy2[shapely]
+COPY ./setup.py ./setup.py
+RUN pip install -e .
+
 
 WORKDIR $APP_HOME
 
-# copy project
+
+###########
+# BACKEND #
+###########
+
+FROM base AS backend
+
+COPY ./alembic.ini ./entrypoint.sh ./load_initial_data.py .
+COPY ./alembic ./alembic
 COPY ./app ./app
 
 RUN chown -R app:app .
 RUN mkdir -p ./app/exports && chown -R app:app ./app/exports && chmod -R 777 ./app/exports
 USER app
 
-
-#######
-# APP #
-#######
-
-FROM base AS app
-
-RUN chmod +x ./app/entrypoint.sh
-ENTRYPOINT ["./app/entrypoint.sh"]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "./app"]
+RUN chmod +x ./entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]
 
 
 ##########
@@ -66,5 +72,9 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload
 ##########
 
 FROM base AS worker
+
+COPY ./app ./app
+RUN chown -R app:app .
+USER app
 
 CMD ["python", "-u", "-m", "app.rabbitmq.consumer"]

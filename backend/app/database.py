@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Iterable, AsyncGenerator
 
 from fastapi import HTTPException, status
 from geoalchemy2 import WKTElement, Geography
@@ -20,7 +20,7 @@ AsyncSessionLocal = sessionmaker(
 )
 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         yield session
 

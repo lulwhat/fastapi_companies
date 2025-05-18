@@ -15,11 +15,11 @@ Stack:
 + PostgreSQL 17
 + RabbitMQ 3.13.7
 
-Prepared to deploy with *Docker-compose*
+Prepared to deploy with Docker-compose
 
-Full list of requirements: [requirements.txt](/app/requirements.txt)
+Full list of requirements: [requirements.txt](/backend/requirements.txt)
 
-DB is prepopulated with test data from [db_backup.sql](/app/db_backup.sql)
+DB is prepopulated with test data with script [load_initial_data.py](/backend/load_initial_data.py)
 
 Full task description: [task_description.docx](/task_description.docx)
 
@@ -27,10 +27,10 @@ Full task description: [task_description.docx](/task_description.docx)
 
 **To use locally run following steps:**
 
-**Build containers:**
+**Start containers:**
 + Either straight-up execute `./setup` (`.env` will be created from [.env.example](/.env.example) copy)
 + Or create your own `.env` based on [.env.example](/.env.example) and then run `./setup`
 
-**Open in browser to access SwaggerUI:** `http://localhost:8000/docs`
+**Open in browser to access SwaggerUI:** <http://localhost:8000/docs>
 
 **Shutdown:** `docker-compose down -v`
