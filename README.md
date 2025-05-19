@@ -2,7 +2,7 @@
 
 Features:
 + Companies catalogue
-+ Buildings with WGS-84 coordinates that companies are registered in
++ Buildings with coordinates that companies are registered in
 + Companies phone numbers
 + Searching for companies in an area
 + Companies category tree with search
@@ -31,6 +31,6 @@ Full task description: [task_description.docx](/task_description.docx)
 + Either straight-up execute `./setup` (`.env` will be created from [.env.example](/.env.example) copy)
 + Or create your own `.env` based on [.env.example](/.env.example) and then run `./setup`
 
-**Open in browser to access SwaggerUI:** <http://localhost:8000/docs>
+**Open in browser to access SwaggerUI:** <http://localhost:8000/api/v1/docs/>
 
 **Shutdown:** `docker-compose down -v`

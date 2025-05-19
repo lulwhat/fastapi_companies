@@ -2,9 +2,9 @@ import asyncio
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
 
-from app.database import create_session
-from app.rabbitmq.export_service import process_task
-from app.config import settings
+from database import create_session
+from rabbitmq.export_service import process_task
+from config import settings
 
 
 async def process_export_message(message: AbstractIncomingMessage):

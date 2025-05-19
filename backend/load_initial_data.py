@@ -1,6 +1,5 @@
 """Module for generating initial test data"""
 import asyncio
-import logging
 import random
 
 from sqlalchemy import text
@@ -11,6 +10,7 @@ from app.models import Building, Company, PhoneNumber, Category
 
 async def load_initial_data():
     async for db in get_session():
+        db.bind.echo = False
         await db.execute(text(
             "TRUNCATE TABLE phone_numbers, companies, buildings, categories, "
             "company_category_association RESTART IDENTITY CASCADE"
@@ -118,6 +118,4 @@ async def load_initial_data():
 
 if __name__ == "__main__":
     print("Loading initial data")
-    # silent stdout for this script
-    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
     asyncio.run(load_initial_data())

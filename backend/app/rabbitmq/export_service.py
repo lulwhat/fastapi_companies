@@ -6,9 +6,9 @@ from fastapi import HTTPException, status
 from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 
-from app.config import settings
-from app.database import AsyncSession
-from app.models import Company, ExportTask, PhoneNumber, Building, Category
+from config import settings
+from database import AsyncSession
+from models import Company, ExportTask, PhoneNumber, Building, Category
 
 
 async def create_task(export_table, db: AsyncSession) -> ExportTask:
@@ -21,7 +21,7 @@ async def create_task(export_table, db: AsyncSession) -> ExportTask:
         """)
     result = await db.execute(q, {'table_name': export_table})
     table_exists = result.scalar_one()
-    if not table_exists:
+    if table_exists is False:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'Table not found')
 

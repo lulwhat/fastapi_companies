@@ -1,22 +1,27 @@
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 
 from geoalchemy2.shape import to_shape
 from pydantic import BaseModel, ConfigDict
 
 
+# Company schemas
 class PhoneNumber(BaseModel):
     phone_number: str
 
 
-class Company(BaseModel):
-    id: int
+class CompanyCreate(BaseModel):
     name: str
     phone_numbers: List
     building_id: int
     categories: List
 
 
+class CompanyResponse(CompanyCreate):
+    id: int
+
+
+# Building schemas
 class Coordinates(BaseModel):
     longitude: float
     latitude: float
@@ -27,33 +32,38 @@ class Coordinates(BaseModel):
         return cls(longitude=point.x, latitude=point.y)
 
 
-class Building(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    id: int
+class BuildingCreate(BaseModel):
     address: str
     coordinates: Coordinates
 
 
-class BuildingCompanies(BaseModel):
+class BuildingResponse(BuildingCreate):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     id: int
-    address: str
+
+
+class BuildingCompaniesResponse(BuildingResponse):
     companies: List
 
 
-class Category(BaseModel):
-    id: int
+# Category schemas
+class CategoryCreate(BaseModel):
     name: str
     parent_id: int | None = None
+
+
+class CategoryResponse(CategoryCreate):
+    id: int
     children: List
 
 
-class CompaniesByCategories(BaseModel):
+class CompaniesByCategoriesResponse(BaseModel):
     category_id: int
     category_name: str
-    companies: dict
+    companies: List[Dict]
 
 
+# Export schemas
 class ExportStatus(BaseModel):
     task_id: int
     status: str

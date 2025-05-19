@@ -1,4 +1,4 @@
-from typing import List, Iterable, AsyncGenerator
+from typing import List, AsyncGenerator
 
 from fastapi import HTTPException, status
 from geoalchemy2 import WKTElement, Geography
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker, joinedload, selectinload
 
-from app.config import settings
+from config import settings
 from models import Building, Company, Category, PhoneNumber, \
     company_category_association
 
@@ -34,13 +34,7 @@ async def select_building(building_id, db: AsyncSession) -> Building:
     result = await db.execute(
         select(Building).where(Building.id == building_id)
     )
-    bld = result.scalars().first()
-
-    if bld is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='Building not found')
-
-    return bld
+    return result.scalar_one_or_none()
 
 
 async def select_building_companies(
@@ -61,10 +55,6 @@ async def select_building_companies(
     res = await db.execute(q)
     bld = res.scalars().first()
 
-    if bld is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='Building not found')
-
     return bld
 
 
@@ -80,10 +70,6 @@ async def select_category(criteria: int | str, db: AsyncSession) -> Category:
             cat = result.scalars().first()
         case _:
             cat = None
-
-    if cat is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='Category not found')
 
     return cat
 
@@ -104,10 +90,6 @@ async def select_company(criteria: str | int, db: AsyncSession):
             comp = result.scalars().first()
         case _:
             comp = None
-
-    if comp is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='Company not found')
 
     return comp
 

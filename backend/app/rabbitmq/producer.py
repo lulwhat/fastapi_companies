@@ -1,6 +1,6 @@
 import aio_pika
 
-from app.config import settings
+from config import settings
 
 
 async def get_rabbitmq_connection():
