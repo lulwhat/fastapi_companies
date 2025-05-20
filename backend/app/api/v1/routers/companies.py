@@ -3,14 +3,16 @@ from typing import List
 from fastapi import APIRouter, status, Depends, HTTPException
 
 from api.v1.schemas import CompanyResponse, CompanyCreate, \
-    CompaniesByCategoriesResponse
-from database import insert_company, get_session, AsyncSession, \
-    select_companies_in_area, select_company, select_companies_by_category
+    CompaniesByCategoriesResponse, CompanyAdvancedSearchParams
+from core.repositories.companies import CompaniesQueries
+from database import get_session, AsyncSession
 
 router = APIRouter(
     prefix="/companies",
     tags=["Companies"],
-    responses={404: {"description": "Not found"}}
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Endpoint not found"}
+    }
 )
 
 
@@ -32,7 +34,7 @@ async def create_company(
         company_data: CompanyCreate, db: AsyncSession = Depends(get_session)
 ) -> CompanyResponse:
     try:
-        cmp = await insert_company(
+        cmp = await CompaniesQueries.create_company(
             company_data.name, company_data.phone_numbers,
             company_data.building_id, company_data.categories, db
         )
@@ -60,10 +62,10 @@ async def create_company(
     """
 )
 async def get_company_by_id(
-    company_id: int,
-    db: AsyncSession = Depends(get_session)
+        company_id: int,
+        db: AsyncSession = Depends(get_session)
 ) -> CompanyResponse:
-    cmp = await select_company(company_id, db)
+    cmp = await CompaniesQueries.get_company(company_id, db)
     if cmp is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -88,10 +90,10 @@ async def get_company_by_id(
     """
 )
 async def search_company_by_name(
-    company_name: str,
-    db: AsyncSession = Depends(get_session)
+        company_name: str,
+        db: AsyncSession = Depends(get_session)
 ) -> CompanyResponse:
-    cmp = await select_company(company_name, db)
+    cmp = await CompaniesQueries.get_company(company_name, db)
     if cmp is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -106,7 +108,7 @@ async def search_company_by_name(
     )
 
 
-@router.post(
+@router.get(
     "/search/in-area",
     response_model=List[CompanyResponse],
     summary="Find companies near location",
@@ -114,16 +116,20 @@ async def search_company_by_name(
     description="""## Search for companies within radius:
     
     - radius: Search radius in meters
-    - coordinates: Center point (longitude, latitude)
+    - longitude: Center point longitude
+    - latitude: Center point latitude
     """
 )
 async def search_companies_in_area(
         radius: int,
-        coordinates: tuple[float, float],
+        longitude: float,
+        latitude: float,
         db: AsyncSession = Depends(get_session)
 ) -> List[CompanyResponse]:
     try:
-        companies = await select_companies_in_area(coordinates, radius, db)
+        companies = await CompaniesQueries.get_companies_in_area(
+            longitude, latitude, radius, db
+        )
         return [
             CompanyResponse(
                 id=cmp.id,
@@ -155,10 +161,10 @@ async def search_companies_in_area(
     """
 )
 async def get_companies_by_category_id(
-    category_id: int,
-    db: AsyncSession = Depends(get_session)
+        category_id: int,
+        db: AsyncSession = Depends(get_session)
 ) -> List[CompaniesByCategoriesResponse]:
-    result = await select_companies_by_category(category_id, db)
+    result = await CompaniesQueries.get_companies_by_category(category_id, db)
     return [
         CompaniesByCategoriesResponse(
             category_id=cat.id,
@@ -182,10 +188,12 @@ async def get_companies_by_category_id(
     """
 )
 async def get_companies_by_category_name(
-    category_name: str,
-    db: AsyncSession = Depends(get_session)
+        category_name: str,
+        db: AsyncSession = Depends(get_session)
 ) -> List[CompaniesByCategoriesResponse]:
-    result = await select_companies_by_category(category_name, db)
+    result = await CompaniesQueries.get_companies_by_category(
+        category_name, db
+    )
     return [
         CompaniesByCategoriesResponse(
             category_id=cat.id,
@@ -196,4 +204,45 @@ async def get_companies_by_category_name(
             ]
         )
         for cat, comps in result.items()
+    ]
+
+
+@router.get(
+    "/search/advanced",
+    response_model=List[CompanyResponse],
+    summary="Advanced company search",
+    description="""## Search companies with multiple filters combined:
+
+    - name: Partial company name match
+    - category_id: Exact category ID (exclusive with category_name)
+    - category_name: Exact category name (exclusive with category_id)
+    - phone_number: Partial phone number match
+    - building_id: Exact building ID
+    - location: Geographic search as "longitude,latitude,radius_meters"
+    """,
+)
+async def advanced_search_companies(
+        search_data: CompanyAdvancedSearchParams = Depends(),
+        db: AsyncSession = Depends(get_session)
+) -> List[CompanyResponse]:
+    companies = await CompaniesQueries.run_advanced_search(
+        search_data.name,
+        search_data.category_id,
+        search_data.category_name,
+        search_data.phone_number,
+        search_data.building_id,
+        search_data.location,
+        db
+    )
+
+    return [
+        CompanyResponse(
+            id=company.id,
+            name=company.name,
+            phone_numbers=[str(num.phone_number) for num in
+                           company.phone_numbers],
+            building_id=company.building_id,
+            categories=[cat.name for cat in company.categories]
+        )
+        for company in companies
     ]

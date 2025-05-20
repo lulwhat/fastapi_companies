@@ -3,13 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.v1.schemas import BuildingCreate, BuildingResponse, \
     BuildingCompaniesResponse, Coordinates
-from database import get_session, select_building, \
-    select_building_companies, insert_building
+from core.repositories.buildings import BuildingsQueries
+from database import get_session
 
 router = APIRouter(
     prefix="/buildings",
     tags=["Buildings"],
-    responses={404: {"description": "Not found"}}
+    responses={404: {"description": "Endpoint not found"}}
 )
 
 
@@ -34,7 +34,7 @@ async def create_building(
             building_data.coordinates.longitude,
             building_data.coordinates.latitude
         )
-        bld = await insert_building(
+        bld = await BuildingsQueries.create_building(
             building_data.address, coordinates_tuple, db
         )
         return BuildingResponse(
@@ -63,7 +63,7 @@ async def get_building(
         building_id: int,
         db: AsyncSession = Depends(get_session)
 ) -> BuildingResponse:
-    bld = await select_building(building_id, db)
+    bld = await BuildingsQueries.get_building(building_id, db)
     if not bld:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -90,7 +90,7 @@ async def get_companies_in_building(
         building_id: int,
         db: AsyncSession = Depends(get_session)
 ) -> BuildingCompaniesResponse:
-    bld = await select_building_companies(building_id, db)
+    bld = await BuildingsQueries.get_building_companies(building_id, db)
 
     if bld is None:
         raise HTTPException(

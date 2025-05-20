@@ -2,19 +2,16 @@ import asyncio
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
 
-from database import create_session
+from database import get_session
 from rabbitmq.export_service import process_task
 from config import settings
 
 
 async def process_export_message(message: AbstractIncomingMessage):
     async with message.process():
-        task_id = int(message.body.decode())
-        db = await create_session()
-        try:
+        async for db in get_session():
+            task_id = int(message.body.decode())
             await process_task(db, task_id)
-        finally:
-            await db.close()
 
 
 async def consume():

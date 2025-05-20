@@ -1,13 +1,13 @@
 from fastapi import APIRouter, status, Depends, HTTPException
 
-from api.v1.schemas import CategoryResponse, CategoryCreate
-from database import get_session, AsyncSession, insert_category, \
-    select_category
+from api.v1.schemas import CategoryResponse
+from core.repositories.categories import CategoriesQueries
+from database import get_session, AsyncSession
 
 router = APIRouter(
     prefix="/categories",
     tags=["Categories"],
-    responses={404: {"description": "Category not found"}}
+    responses={404: {"description": "Endpoint not found"}}
 )
 
 
@@ -19,27 +19,23 @@ router = APIRouter(
     description="""## Create a new category with:
     
     - name: Category name (required)
-    - parent_category: Parent category name (optional)
+    - parent_id: Parent category id (optional)
 
     Note: Maximum nesting depth is 3 levels
     """
 )
 async def create_category(
-        category_data: CategoryCreate,
+        name: str,
+        parent_id: int | None = None,
         db: AsyncSession = Depends(get_session)
 ) -> CategoryResponse:
-    try:
-        category = await insert_category(
-            name=category_data.name,
-            parent_category=category_data.parent_category,
-            db=db
-        )
-        return CategoryResponse.from_orm(category)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    category = await CategoriesQueries.create_category(name, parent_id, db)
+    return CategoryResponse(
+        id=category.id,
+        name=category.name,
+        parent_id=category.parent_id,
+        children=[]
+    )
 
 
 @router.get(
@@ -56,7 +52,7 @@ async def get_category_by_id(
         category_id: int,
         db: AsyncSession = Depends(get_session)
 ) -> CategoryResponse:
-    cat = await select_category(category_id, db)
+    cat = await CategoriesQueries.get_category(category_id, db)
     if cat is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -67,7 +63,7 @@ async def get_category_by_id(
         name=cat.name,
         parent_id=cat.parent_id,
         children=[
-            {'id': child.id, 'name': child.name} for child in cat.children
+            {"id": child.id, "name": child.name} for child in cat.children
         ]
     )
 
@@ -86,7 +82,7 @@ async def get_category_by_name(
         category_name: str,
         db: AsyncSession = Depends(get_session)
 ) -> CategoryResponse:
-    cat = await select_category(category_name, db)
+    cat = await CategoriesQueries.get_category(category_name, db)
     if cat is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

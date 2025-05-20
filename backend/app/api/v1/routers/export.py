@@ -10,7 +10,7 @@ from rabbitmq.producer import publish_export_task
 router = APIRouter(
     prefix="/export",
     tags=["Export"],
-    responses={404: {"description": "Not found"}}
+    responses={404: {"description": "Endpoint not found"}}
 )
 
 
