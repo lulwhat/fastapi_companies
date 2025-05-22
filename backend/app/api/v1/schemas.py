@@ -10,17 +10,23 @@ from pydantic import BaseModel, ConfigDict
 # Company schemas
 class CompanyCreate(BaseModel):
     name: str
-    phone_numbers: List
+    phone_numbers: List[str]
     building_id: int
-    categories: List
+    categories: List[int]
 
 
 class CompanyResponse(BaseModel):
     id: int
     name: str
-    phone_numbers: List
+    phone_numbers: List[str]
     building_id: int
     categories: List
+
+
+class CompanyAreaSearchParams(BaseModel):
+    radius: int
+    longitude: float
+    latitude: float
 
 
 class CompanyAdvancedSearchParams:
@@ -58,7 +64,8 @@ class CompanyAdvancedSearchParams:
         self.building_id = building_id
         self.location = self._validate_location(location)
 
-    def _validate_location(self, location: str):
+    @staticmethod
+    def _validate_location(location: str):
         if location is None:
             return None
 
@@ -76,7 +83,8 @@ class CompanyAdvancedSearchParams:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
-    def _validate_category(self, category_id, category_name):
+    @staticmethod
+    def _validate_category(category_id, category_name):
         if category_id and category_name:
             raise HTTPException(
                 detail="Use only one field at a time: "
@@ -120,6 +128,11 @@ class BuildingCompaniesResponse(BaseModel):
 
 
 # Category schemas
+class CategoryCreate(BaseModel):
+    name: str
+    parent_id: int | None = None
+
+
 class CategoryResponse(BaseModel):
     id: int
     name: str

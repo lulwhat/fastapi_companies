@@ -55,12 +55,12 @@ WORKDIR $APP_HOME
 
 FROM base AS backend
 
-COPY ./alembic.ini ./entrypoint.sh ./load_initial_data.py .
+COPY ./alembic.ini ./entrypoint.sh ./load_initial_data.py ./pytest.ini .
 COPY ./alembic ./alembic
 COPY ./app ./app
 
 RUN chown -R app:app .
-RUN mkdir -p ./app/exports && chown -R app:app ./app/exports && chmod -R 777 ./app/exports
+RUN mkdir -p ./app/exports && chown -R app:app ./app/exports && chmod -R u+w /home/app/web
 USER app
 
 RUN chmod +x ./entrypoint.sh

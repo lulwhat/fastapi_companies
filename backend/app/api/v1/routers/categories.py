@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Depends, HTTPException
 
-from api.v1.schemas import CategoryResponse
+from api.v1.schemas import CategoryResponse, CategoryCreate
 from core.repositories.categories import CategoriesQueries
 from database import get_session, AsyncSession
 
@@ -17,19 +17,20 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new category",
     description="""## Create a new category with:
-    
+
     - name: Category name (required)
-    - parent_id: Parent category id (optional)
+    - parent_id: Parent category id (optional, int)
 
     Note: Maximum nesting depth is 3 levels
     """
 )
 async def create_category(
-        name: str,
-        parent_id: int | None = None,
+        category_data: CategoryCreate,
         db: AsyncSession = Depends(get_session)
 ) -> CategoryResponse:
-    category = await CategoriesQueries.create_category(name, parent_id, db)
+    category = await CategoriesQueries.create_category(
+        category_data.name, category_data.parent_id, db
+    )
     return CategoryResponse(
         id=category.id,
         name=category.name,

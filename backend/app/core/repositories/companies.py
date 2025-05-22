@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import HTTPException, status
 from geoalchemy2 import Geography, WKTElement
-from sqlalchemy import select, cast, func, Select, Sequence, and_
+from sqlalchemy import select, cast, func, Select, and_
 from sqlalchemy.orm import joinedload, selectinload
 
 from database import AsyncSession
@@ -154,12 +154,12 @@ class CompaniesQueries:
 
             if categories:
                 categories_res = await db.execute(
-                    select(Category).where(Category.name.in_(categories))
+                    select(Category).where(Category.id.in_(categories))
                 )
                 existing_categories = categories_res.scalars().all()
                 if len(existing_categories) != len(categories):
-                    found_names = {c.name for c in existing_categories}
-                    missing = set(categories) - found_names
+                    found_cats = {c.id for c in existing_categories}
+                    missing = set(categories) - found_cats
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Categories not found: {missing}"
@@ -186,39 +186,42 @@ class CompaniesQueries:
             raise e
 
     @staticmethod
-    async def get_company(criteria: str | int, db: AsyncSession) -> Company:
-        """Get company by search criteria (id or name)"""
+    async def get_companies(
+            criteria: str | int, db: AsyncSession
+    ) -> List[Company]:
+        """Get companies by search criteria (id or name)
+        Expected to yield 1 company by id, or multiple by name"""
 
         query = CompaniesQuerybuilder.get_company_query(criteria)
         try:
             result = await db.execute(query)
-            comp = result.scalar_one_or_none()
+            comps = result.scalars().all()
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail=str(e))
 
-        if comp is None:
+        if not comps:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail="Company not found")
+                                detail="No companies found for given criteria")
 
-        return comp
+        return comps
 
     @staticmethod
     async def get_companies_in_area(
             lon: float, lat: float, radius: int, db: AsyncSession
-    ) -> Sequence[Company]:
+    ) -> List[Company]:
         query = CompaniesQuerybuilder.get_companies_in_area_query(
             lon, lat, radius
         )
         result = await db.execute(query)
-        buildings = result.scalars().all()
+        comps = result.scalars().all()
 
-        if not buildings:
+        if not comps:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No companies found in given area"
             )
-        return buildings
+        return comps
 
     @staticmethod
     async def get_companies_by_category(
@@ -262,7 +265,7 @@ class CompaniesQueries:
     async def run_advanced_search(
             name, category_id, category_name, phone_number, building_id,
             location, db: AsyncSession
-    ) -> Sequence[Company]:
+    ) -> List[Company]:
         query = CompaniesQuerybuilder.get_companies_advanced_search_query(
             name, category_id, category_name, phone_number, building_id,
             location

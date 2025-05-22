@@ -3,7 +3,8 @@ from typing import List
 from fastapi import APIRouter, status, Depends, HTTPException
 
 from api.v1.schemas import CompanyResponse, CompanyCreate, \
-    CompaniesByCategoriesResponse, CompanyAdvancedSearchParams
+    CompaniesByCategoriesResponse, CompanyAdvancedSearchParams, \
+    CompanyAreaSearchParams
 from core.repositories.companies import CompaniesQueries
 from database import get_session, AsyncSession
 
@@ -27,7 +28,7 @@ router = APIRouter(
     - name: Company name
     - phone_numbers: List of phone numbers (e.g. ["9023456789"])
     - building_id: ID of the building where company is located
-    - categories: List of category names
+    - categories: List of category IDs
     """
 )
 async def create_company(
@@ -43,7 +44,10 @@ async def create_company(
             name=cmp.name,
             phone_numbers=[str(num.phone_number) for num in cmp.phone_numbers],
             building_id=cmp.building_id,
-            categories=[cat.name for cat in cmp.categories]
+            categories=[
+                {"category_id": cat.id, "category_name": cat.name}
+                for cat in cmp.categories
+            ]
         )
     except Exception as e:
         raise HTTPException(
@@ -54,61 +58,61 @@ async def create_company(
 
 @router.get(
     "/{company_id}",
-    response_model=CompanyResponse,
+    response_model=List[CompanyResponse],
     summary="Get company by ID",
     description="""## Get company details by ID:
     
     - company_id: ID of the company to retrieve
     """
 )
-async def get_company_by_id(
+async def get_companies_by_id(
         company_id: int,
         db: AsyncSession = Depends(get_session)
-) -> CompanyResponse:
-    cmp = await CompaniesQueries.get_company(company_id, db)
-    if cmp is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Company not found"
-        )
-    return CompanyResponse(
-        id=cmp.id,
-        name=cmp.name,
-        phone_numbers=[str(num.phone_number) for num in cmp.phone_numbers],
-        building_id=cmp.building_id,
-        categories=[cat.name for cat in cmp.categories]
-    )
+) -> List[CompanyResponse]:
+    cmps = await CompaniesQueries.get_companies(company_id, db)
+    return [
+            CompanyResponse(
+                id=cmp.id,
+                name=cmp.name,
+                phone_numbers=[str(num.phone_number) for num in cmp.phone_numbers],
+                building_id=cmp.building_id,
+                categories=[
+                    {"category_id": cat.id, "category_name": cat.name}
+                    for cat in cmp.categories
+                ]
+            ) for cmp in cmps
+    ]
 
 
 @router.get(
     "/search/by-company-name",
-    response_model=CompanyResponse,
-    summary="Search company by name",
-    description="""## Search company by name:
+    response_model=List[CompanyResponse],
+    summary="Search companies by name",
+    description="""## Search companies by name:
     
     - company_name: Name of the company to search
     """
 )
-async def search_company_by_name(
+async def search_companies_by_name(
         company_name: str,
         db: AsyncSession = Depends(get_session)
-) -> CompanyResponse:
-    cmp = await CompaniesQueries.get_company(company_name, db)
-    if cmp is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Company not found"
-        )
-    return CompanyResponse(
-        id=cmp.id,
-        name=cmp.name,
-        phone_numbers=[str(num.phone_number) for num in cmp.phone_numbers],
-        building_id=cmp.building_id,
-        categories=[cat.name for cat in cmp.categories]
-    )
+) -> List[CompanyResponse]:
+    cmps = await CompaniesQueries.get_companies(company_name, db)
+    return [
+        CompanyResponse(
+            id=cmp.id,
+            name=cmp.name,
+            phone_numbers=[str(num.phone_number) for num in cmp.phone_numbers],
+            building_id=cmp.building_id,
+            categories=[
+                {"category_id": cat.id, "category_name": cat.name}
+                for cat in cmp.categories
+            ]
+        ) for cmp in cmps
+    ]
 
 
-@router.get(
+@router.post(
     "/search/in-area",
     response_model=List[CompanyResponse],
     summary="Find companies near location",
@@ -121,34 +125,26 @@ async def search_company_by_name(
     """
 )
 async def search_companies_in_area(
-        radius: int,
-        longitude: float,
-        latitude: float,
+        search_data: CompanyAreaSearchParams,
         db: AsyncSession = Depends(get_session)
 ) -> List[CompanyResponse]:
-    try:
-        companies = await CompaniesQueries.get_companies_in_area(
-            longitude, latitude, radius, db
-        )
-        return [
-            CompanyResponse(
-                id=cmp.id,
-                name=cmp.name,
-                phone_numbers=[
-                    str(num.phone_number) for num in cmp.phone_numbers
-                ],
-                building_id=cmp.building_id,
-                categories=[
-                    {"category_id": cat.id, "category_name": cat.name}
-                    for cat in cmp.categories
-                ]
-            ) for cmp in companies
-        ]
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid search parameters: {str(e)}"
-        )
+    companies = await CompaniesQueries.get_companies_in_area(
+        search_data.longitude, search_data.latitude, search_data.radius, db
+    )
+    return [
+        CompanyResponse(
+            id=cmp.id,
+            name=cmp.name,
+            phone_numbers=[
+                str(num.phone_number) for num in cmp.phone_numbers
+            ],
+            building_id=cmp.building_id,
+            categories=[
+                {"category_id": cat.id, "category_name": cat.name}
+                for cat in cmp.categories
+            ]
+        ) for cmp in companies
+    ]
 
 
 @router.get(
@@ -237,12 +233,15 @@ async def advanced_search_companies(
 
     return [
         CompanyResponse(
-            id=company.id,
-            name=company.name,
+            id=cmp.id,
+            name=cmp.name,
             phone_numbers=[str(num.phone_number) for num in
-                           company.phone_numbers],
-            building_id=company.building_id,
-            categories=[cat.name for cat in company.categories]
+                           cmp.phone_numbers],
+            building_id=cmp.building_id,
+            categories=[
+                {"category_id": cat.id, "category_name": cat.name}
+                for cat in cmp.categories
+            ]
         )
-        for company in companies
+        for cmp in companies
     ]

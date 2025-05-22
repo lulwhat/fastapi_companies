@@ -31,7 +31,7 @@ class CategoriesQueries:
     ):
         try:
             # validate Category nesting depth does not exceed level 3
-            if parent_id is not None:
+            if parent_id:
                 parent_res = await db.execute(
                     select(Category).where(Category.id == parent_id)
                 )
@@ -46,8 +46,10 @@ class CategoriesQueries:
                         detail="Maximum categories nesting depth of 3 exceeded"
                     )
 
-            cat = Category(name=name,
-                           parent_id=parent_id)
+            cat = Category(
+                name=name,
+                parent_id=parent_id if parent_id else None
+            )
             db.add(cat)
             await db.commit()
             await db.refresh(cat)

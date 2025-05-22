@@ -33,4 +33,6 @@ Full task description: [task_description.docx](/task_description.docx)
 
 **Open in browser to access SwaggerUI:** <http://localhost:8000/api/v1/docs/>
 
+**Run autotests:** `docker exec -it backend pytest -v`
+
 **Shutdown:** `docker-compose down -v`

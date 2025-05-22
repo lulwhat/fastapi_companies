@@ -22,7 +22,7 @@ router = APIRouter(
     description="""Create a new building with address and coordinates:
     
     - address: Full postal address
-    - coordinates: Tuple of (longitude, latitude)
+    - coordinates: {longitude: float, latitude: float}
     """
 )
 async def create_building(

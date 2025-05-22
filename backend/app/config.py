@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
@@ -14,6 +15,10 @@ class Settings(BaseSettings):
     RABBITMQ_PORT: str
     EXPORT_QUEUE: str = "export_queue"
     EXPORT_DIR: Path = Path("/home/app/web/app/exports")
+    env_file: str = ".env"
+    env_file_encoding: str = "utf-8"
+
+    model_config = ConfigDict(from_attributes=True)
 
     @property
     def RABBITMQ_URL(self) -> str:
@@ -30,10 +35,6 @@ class Settings(BaseSettings):
     def URL_DATABASE_DEBUG(self) -> str:
         return (f"postgresql+asyncpg://{self.SQL_USER}:{self.SQL_PASSWORD}"
                 f"@localhost:5432/{self.SQL_DATABASE}")
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 @lru_cache

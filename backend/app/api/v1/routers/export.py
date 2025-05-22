@@ -15,7 +15,7 @@ router = APIRouter(
 
 
 @router.post(
-    "/export",
+    "/",
     response_model=ExportStatus,
     summary="Export table data to csv",
     description="""## Export tables data to CSV:
@@ -41,7 +41,7 @@ async def create_export(
 
 
 @router.get(
-    "/export/status/{task_id}",
+    "/status/{task_id}",
     response_model=ExportStatus,
     summary="Check export status",
     description="""## Check export task status:
@@ -65,7 +65,7 @@ async def check_export_status(
 
 
 @router.get(
-    "/export/download/{task_id}",
+    "/download/{task_id}",
     summary="Download exported file",
     description="""## Download exported file:
     
